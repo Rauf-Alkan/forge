@@ -36,4 +36,4 @@ ENV NODE_ENV=production
 
 RUN echo ">>> [7/7] Container setup complete. Port 3000 exposed. NODE_ENV=production"
 
-CMD echo ">>> [START] Launching app with npm start..." && npm start
+CMD echo ">>> [START] Running DB migrations..." && npx prisma migrate deploy && echo ">>> [START] Launching app..." && npm start

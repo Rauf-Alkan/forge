@@ -24,13 +24,13 @@ export async function POST(req: NextRequest) {
     }
 
     const jobId = uuidv4()
-    createJob(jobId)
+    await createJob(jobId)
 
     // Return immediately — pipeline runs in background
     const response = NextResponse.json({ jobId })
 
-    runPipeline(jobId, topic).catch((err) => {
-      updateJob(jobId, {
+    runPipeline(jobId, topic).catch(async (err) => {
+      await updateJob(jobId, {
         status: 'failed',
         error: err instanceof Error ? err.message : String(err),
       })
@@ -50,45 +50,45 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
 
   // ADIM 1 — Script
   console.log(`[${jobId}] Step 1: Generating script...`)
-  updateJob(jobId, { status: 'processing', currentStep: 1, stepName: 'Writing script...', progress: 5 })
+  await updateJob(jobId, { status: 'processing', currentStep: 1, stepName: 'Writing script...', progress: 5 })
   const scriptResult = await generateScript(topic)
   console.log(`[${jobId}] Step 1 done — title: "${scriptResult.title}", keywords: ${scriptResult.keywords.join(', ')}`)
-  updateJob(jobId, { progress: 20 })
+  await updateJob(jobId, { progress: 20 })
 
   // ADIM 2 — Voice
   console.log(`[${jobId}] Step 2: Generating voice...`)
-  updateJob(jobId, { currentStep: 2, stepName: 'Generating voice...', progress: 20 })
+  await updateJob(jobId, { currentStep: 2, stepName: 'Generating voice...', progress: 20 })
   await generateVoice(scriptResult.script, jobId)
   console.log(`[${jobId}] Step 2 done`)
-  updateJob(jobId, { progress: 40 })
+  await updateJob(jobId, { progress: 40 })
 
   // ADIM 3 — Visuals
   console.log(`[${jobId}] Step 3: Fetching videos from Pexels...`)
-  updateJob(jobId, { currentStep: 3, stepName: 'Fetching visuals...', progress: 40 })
+  await updateJob(jobId, { currentStep: 3, stepName: 'Fetching visuals...', progress: 40 })
   const videoPaths = await fetchVideos(scriptResult.keywords, jobId)
   console.log(`[${jobId}] Step 3 done — downloaded ${videoPaths.length} videos: ${videoPaths.join(', ')}`)
-  updateJob(jobId, { progress: 60 })
+  await updateJob(jobId, { progress: 60 })
 
   // ADIM 4 — Subtitles
   console.log(`[${jobId}] Step 4: Generating subtitles...`)
-  updateJob(jobId, { currentStep: 4, stepName: 'Creating subtitles...', progress: 60 })
+  await updateJob(jobId, { currentStep: 4, stepName: 'Creating subtitles...', progress: 60 })
   await generateSubtitles(jobId)
   console.log(`[${jobId}] Step 4 done`)
-  updateJob(jobId, { progress: 75 })
+  await updateJob(jobId, { progress: 75 })
 
   // ADIM 5 — Assemble
   console.log(`[${jobId}] Step 5: Assembling video with ffmpeg...`)
-  updateJob(jobId, { currentStep: 5, stepName: 'Assembling video...', progress: 75 })
+  await updateJob(jobId, { currentStep: 5, stepName: 'Assembling video...', progress: 75 })
   await assembleVideo(jobId, videoPaths)
   console.log(`[${jobId}] Step 5 done`)
-  updateJob(jobId, { progress: 90 })
+  await updateJob(jobId, { progress: 90 })
 
   // ADIM 6 — Upload
   console.log(`[${jobId}] Step 6: Uploading to R2...`)
-  updateJob(jobId, { stepName: 'Uploading...', progress: 90 })
+  await updateJob(jobId, { stepName: 'Uploading...', progress: 90 })
   const downloadUrl = await uploadToR2(jobId)
   console.log(`[${jobId}] Step 6 done — url: ${downloadUrl}`)
 
-  updateJob(jobId, { status: 'completed', progress: 100, downloadUrl, title: scriptResult.title, hashtags: scriptResult.hashtags })
+  await updateJob(jobId, { status: 'completed', progress: 100, downloadUrl, title: scriptResult.title, hashtags: scriptResult.hashtags })
   console.log(`[${jobId}] Pipeline completed successfully`)
 }
