@@ -1,0 +1,25 @@
+# Bağımlılıklar (En önemlisi bu, uyarıları bu keser)
+node_modules/
+.pnp
+.pnp.js
+
+# Build çıktıları
+dist/
+build/
+.next/
+out/
+
+# Çevresel değişkenler (Güvenlik için önemli!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logları
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS sistem dosyaları
+.DS_Store

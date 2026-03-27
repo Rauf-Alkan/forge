@@ -2,9 +2,7 @@
 const nextConfig = {
   serverExternalPackages: ['fluent-ffmpeg'],
   experimental: {
-    serverActions: {
-      bodySizeLimit: '10mb'
-    }
-  }
+    serverComponentsExternalPackages: ['fluent-ffmpeg', '@ffmpeg-installer/ffmpeg'],
+  },
 }
 module.exports = nextConfig
