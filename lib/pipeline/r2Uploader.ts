@@ -2,17 +2,17 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import fs from 'fs'
 
 function getS3Client(): S3Client {
-  const accountId = process.env.R2_ACCOUNT_ID
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+  const endpoint = process.env.R2_ENDPOINT
+  const accessKeyId = process.env.R2_ACCESS_KEY
+  const secretAccessKey = process.env.R2_SECRET_KEY
 
-  if (!accountId) throw new Error('R2_ACCOUNT_ID is not set')
-  if (!accessKeyId) throw new Error('R2_ACCESS_KEY_ID is not set')
-  if (!secretAccessKey) throw new Error('R2_SECRET_ACCESS_KEY is not set')
+  if (!endpoint) throw new Error('R2_ENDPOINT is not set')
+  if (!accessKeyId) throw new Error('R2_ACCESS_KEY is not set')
+  if (!secretAccessKey) throw new Error('R2_SECRET_KEY is not set')
 
   return new S3Client({
     region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    endpoint,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -21,10 +21,10 @@ function getS3Client(): S3Client {
 }
 
 export async function uploadToR2(jobId: string): Promise<string> {
-  const bucket = process.env.R2_BUCKET_NAME
+  const bucket = process.env.R2_BUCKET
   const publicUrl = process.env.R2_PUBLIC_URL
 
-  if (!bucket) throw new Error('R2_BUCKET_NAME is not set')
+  if (!bucket) throw new Error('R2_BUCKET is not set')
   if (!publicUrl) throw new Error('R2_PUBLIC_URL is not set')
 
   const filePath = `/tmp/final_${jobId}.mp4`
