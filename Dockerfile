@@ -14,6 +14,7 @@ WORKDIR /app
 RUN echo ">>> [3/7] Working directory set to /app"
 
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN echo ">>> [4/7] package.json copied. Installing npm dependencies..." && \
     npm install --verbose 2>&1 && \
     echo ">>> [4/7] npm install complete. Installed packages:" && \
