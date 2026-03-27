@@ -5,3 +5,6 @@ tmp
 *.mp4
 *.mp3
 *.srt
+.git
+Dockerfile
+.dockerignore
