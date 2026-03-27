@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; }
+::-webkit-scrollbar-track    { background: #030712; }
+::-webkit-scrollbar-thumb    { background: #1f2937; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+/* ── Selection ─────────────────────────────────── */
+::selection {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fff;
+}
+
+/* ── Noise texture overlay ──────────────────────── */
+.bg-noise::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Gradient border card ───────────────────────── */
+.card-border {
+  position: relative;
+  border-radius: 1rem;
+}
+.card-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.25) 0%, rgba(255,255,255,0.05) 50%, rgba(59,130,246,0.1) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Shimmer button ─────────────────────────────── */
+.btn-shimmer {
+  background-size: 200% auto;
+  background-image: linear-gradient(90deg, #2563eb 0%, #3b82f6 40%, #60a5fa 60%, #2563eb 100%);
+  transition: background-position 0.4s ease;
+}
+.btn-shimmer:hover:not(:disabled) {
+  background-position: right center;
+}
+
+/* ── Glow ring on focus ─────────────────────────── */
+.input-forge:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(249,115,22,0.4);
+  border-color: rgba(249,115,22,0.6);
+}
+
+/* ── Active step glow ───────────────────────────── */
+.step-active-glow {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 4px 20px rgba(59,130,246,0.1);
+}
+
+/* ── Forge logo glow ────────────────────────────── */
+.logo-glow {
+  text-shadow: 0 0 30px rgba(249,115,22,0.4), 0 0 60px rgba(249,115,22,0.15);
+}
