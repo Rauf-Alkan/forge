@@ -15,10 +15,9 @@ RUN echo ">>> [3/7] Working directory set to /app"
 
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN echo ">>> [4/7] package.json copied. Installing npm dependencies..." && \
-    npm install --verbose 2>&1 && \
-    echo ">>> [4/7] npm install complete. Installed packages:" && \
-    npm list --depth=0
+RUN echo ">>> [4/7] Installing npm dependencies..." && \
+    npm install --legacy-peer-deps && \
+    echo ">>> [4/7] npm install complete."
 
 COPY . .
 RUN echo ">>> [5/7] Source files copied. Directory contents:" && ls -la
