@@ -1,22 +1,21 @@
-FROM node:18-alpine
+# Node 18 yerine 20 kullanıyoruz
+FROM node:20-alpine
 
-# Bağımlılıklar için gerekli sistem paketlerini kur
+# Bağımlılıklar
 RUN apk add --no-cache ffmpeg python3 make g++
 
 WORKDIR /app
 
-# Sadece package dosyalarını kopyala ve kur (Cache dostu)
 COPY package*.json ./
-# Native modüllerin Alpine'da düzgün derlenmesi için:
+# Alpine'da sorun yaşamamak için normal install
 RUN npm install
 
-# Tüm dosyaları kopyala
 COPY . .
 
-# Next.js telemetry'yi kapat (Build'i hızlandırır ve logları temizler)
+# Build sırasında hata veren API key kontrolünü atlatmak veya sağlamak için
+# Railway Variables kısmına anahtarları eklediysen bu adım geçecektir.
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Projeyi build et
 RUN npm run build
 
 EXPOSE 3000
