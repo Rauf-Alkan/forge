@@ -17,8 +17,18 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const token = btoa(password)
-      localStorage.setItem('forge_token', token)
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Invalid password')
+        setLoading(false)
+        return
+      }
+      localStorage.setItem('forge_token', data.token)
       router.push('/dashboard')
     } catch {
       setError('Something went wrong. Please try again.')
