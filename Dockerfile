@@ -5,7 +5,7 @@ RUN echo ">>> [1/7] Base image ready: node:20-alpine"
 
 # Bağımlılıklar
 RUN echo ">>> [2/7] Installing system dependencies (ffmpeg, python3, make, g++)..." && \
-    apk add --no-cache ffmpeg ffmpeg-libs libass python3 make g++ && \
+    apk add --no-cache ffmpeg ffmpeg-libs libass openssl python3 make g++ && \
     echo ">>> [2/7] System dependencies installed." && \
     ffmpeg -version | head -n1 && \
     python3 --version
