@@ -23,10 +23,17 @@ export async function assembleVideo(
   const subtitlesPath = `/tmp/subtitles_${jobId}.srt`
   const outputPath = `/tmp/final_${jobId}.mp4`
 
-  // ADIM 1 — Audio duration
+  // ADIM 1 — Dosya kontrolleri
+  if (!fs.existsSync(audioPath)) throw new Error(`Audio file not found: ${audioPath}`)
+  if (!fs.existsSync(subtitlesPath)) throw new Error(`Subtitles file not found: ${subtitlesPath}`)
+  for (const vp of videoPaths) {
+    if (!fs.existsSync(vp)) throw new Error(`Video file not found: ${vp}`)
+  }
+
+  // ADIM 2 — Audio duration
   const audioDuration = await getAudioDuration(audioPath)
 
-  // ADIM 2 — Concat list
+  // ADIM 3 — Concat list
   const concatContent = videoPaths
     .map((p) => `file '${p}'`)
     .join('\n')
