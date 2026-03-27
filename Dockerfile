@@ -14,8 +14,9 @@ COPY . .
 
 # Build sırasında hata veren API key kontrolünü atlatmak veya sağlamak için
 # Railway Variables kısmına anahtarları eklediysen bu adım geçecektir.
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
+ENV OPENAI_API_KEY="temporary_key_for_build"
 RUN npm run build
 
 EXPOSE 3000
