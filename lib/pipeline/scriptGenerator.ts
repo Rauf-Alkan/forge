@@ -34,13 +34,13 @@ Return ONLY raw JSON, no markdown backticks, no explanation:
 {
   "script": "complete script text",
   "hook": "first sentence only",
-  "keywords": ["cinematic keyword 1", "cinematic keyword 2", "cinematic keyword 3", "cinematic keyword 4"],
+  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5", "keyword 6"],
   "title": "video title under 60 chars",
   "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
 }
 
-Keywords must be English, cinematic, luxury or dark-aspirational. 2-4 words each.
-Example good keywords: "luxury penthouse night", "businessman walking city", "sports car rain", "skyscraper rooftop view", "cash money close up", "private jet interior", "man suit thinking", "city lights aerial"
+Keywords must be English, cinematic, luxury or dark-aspirational. 2-4 words each. Use 6 DIFFERENT visual scenes that match the script narrative — vary between: failure scenes, hustle/work scenes, luxury/success scenes, city/night scenes, close-up detail shots, and nature/dramatic scenes.
+Example good keywords: "luxury penthouse night", "businessman walking city", "sports car rain", "skyscraper rooftop view", "cash money close up", "private jet interior", "man suit thinking", "city lights aerial", "person alone dark room", "sunset mountain peak"
 Hashtags should include: #motivation #wealth #mindset #success #fyp`
 
   let lastError: Error | null = null
