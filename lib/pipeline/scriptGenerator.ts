@@ -14,15 +14,16 @@ export async function generateScript(topic: string): Promise<ScriptResult> {
   const systemPrompt =
     'You are an expert viral short-form video scriptwriter specializing in faceless TikTok and YouTube Shorts content. You create scripts that generate millions of views through psychological hooks, surprising facts, and emotional storytelling. You never use filler words.'
 
-  const userPrompt = `Create a 40-45 second faceless video script about: ${topic}
+  const userPrompt = `Create a 28-33 second faceless video script about: ${topic}
 
 Requirements:
 - Line 1 must be a HOOK causing immediate psychological curiosity or shock (max 8 words)
-- Use short punchy sentences, maximum 10 words each
+- Use short punchy sentences, maximum 8 words each
+- Around the 15 second mark, add a re-hook sentence to keep viewers watching
 - Include one surprising statistic or counterintuitive fact
 - Build tension throughout, release at the end
-- Last sentence must leave viewer thinking
-- Total: 80-100 words
+- Last sentence must create urgency or leave viewer thinking
+- Total: 60-70 words
 
 Return ONLY raw JSON, no markdown backticks, no explanation:
 {

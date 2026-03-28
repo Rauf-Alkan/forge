@@ -7,6 +7,7 @@ import { generateVoice } from '@/lib/pipeline/voiceGenerator'
 import { fetchVideos } from '@/lib/pipeline/videoFetcher'
 import { generateSubtitles } from '@/lib/pipeline/subtitleGenerator'
 import { assembleVideo } from '@/lib/pipeline/videoAssembler'
+import { downloadMusic } from '@/lib/pipeline/musicProvider'
 import { uploadToR2 } from '@/lib/pipeline/r2Uploader'
 
 export async function POST(req: NextRequest) {
@@ -76,10 +77,12 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   console.log(`[${jobId}] Step 4 done`)
   await updateJob(jobId, { progress: 75 })
 
-  // ADIM 5 — Assemble
-  console.log(`[${jobId}] Step 5: Assembling video with ffmpeg...`)
+  // ADIM 5 — Music + Assemble
+  console.log(`[${jobId}] Step 5: Downloading background music...`)
   await updateJob(jobId, { currentStep: 5, stepName: 'Assembling video...', progress: 75 })
-  await assembleVideo(jobId, videoPaths)
+  const musicPath = await downloadMusic(jobId)
+  console.log(`[${jobId}] Step 5: Music: ${musicPath ?? 'none'}, assembling video...`)
+  await assembleVideo(jobId, videoPaths, musicPath)
   console.log(`[${jobId}] Step 5 done`)
   await updateJob(jobId, { progress: 90 })
 

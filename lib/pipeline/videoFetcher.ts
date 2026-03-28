@@ -29,7 +29,7 @@ async function searchPexels(keyword: string): Promise<PexelsVideo | null> {
         query: keyword,
         orientation: 'portrait',
         size: 'medium',
-        per_page: 8,
+        per_page: 15,
       },
     }
   )
@@ -44,7 +44,7 @@ async function searchPexels(keyword: string): Promise<PexelsVideo | null> {
   if (valid.length === 0) return null
 
   const filtered = valid.filter(
-    (v) => v.duration >= 5 && v.duration <= 15
+    (v) => v.duration >= 3 && v.duration <= 7
   )
 
   const candidates = filtered.length > 0 ? filtered : valid
