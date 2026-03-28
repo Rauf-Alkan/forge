@@ -45,7 +45,8 @@ export async function assembleQuoteVideo(
   const fontSize = 58
   const lineHeight = 75
   const authorFontSize = 36
-  const totalTextHeight = quoteLines.length * lineHeight + 20 + authorFontSize
+  const showAuthor = author && author.toLowerCase() !== 'anonymous'
+  const totalTextHeight = quoteLines.length * lineHeight + (showAuthor ? 20 + authorFontSize : 0)
   const startY = Math.floor((1920 - totalTextHeight) / 2)
   const boxPad = 50
 
@@ -57,8 +58,10 @@ export async function assembleQuoteVideo(
       (line, i) =>
         `drawtext=fontfile='${FONT_FILE}':text='${escapeDrawtext(line)}':fontsize=${fontSize}:fontcolor=white:x=(w-text_w)/2:y=${startY + i * lineHeight}:shadowx=2:shadowy=2:shadowcolor=black@0.8`
     ),
-    // author
-    `drawtext=fontfile='${FONT_FILE}':text='${escapeDrawtext('— ' + author)}':fontsize=${authorFontSize}:fontcolor=white@0.75:x=(w-text_w)/2:y=${startY + quoteLines.length * lineHeight + 20}:shadowx=1:shadowy=1:shadowcolor=black@0.6`,
+    // author (only if not anonymous)
+    ...(showAuthor
+      ? [`drawtext=fontfile='${FONT_FILE}':text='${escapeDrawtext('— ' + author)}':fontsize=${authorFontSize}:fontcolor=white@0.75:x=(w-text_w)/2:y=${startY + quoteLines.length * lineHeight + 20}:shadowx=1:shadowy=1:shadowcolor=black@0.6`]
+      : []),
   ]
 
   const videoFilter =
