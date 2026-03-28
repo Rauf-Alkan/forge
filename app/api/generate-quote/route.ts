@@ -7,6 +7,7 @@ import { fetchImage } from '@/lib/pipeline/quote/imageFetcher'
 import { assembleQuoteVideo } from '@/lib/pipeline/quote/quoteVideoAssembler'
 import { downloadMusic } from '@/lib/pipeline/musicProvider'
 import { uploadToR2 } from '@/lib/pipeline/r2Uploader'
+import { getUsedValues, saveUsedValue } from '@/lib/contentHistory'
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,17 +47,24 @@ export async function POST(req: NextRequest) {
 async function runQuotePipeline(jobId: string, topic: string): Promise<void> {
   console.log(`[${jobId}] Quote pipeline started — topic: "${topic}"`)
 
+  // Load history
+  const [usedQuotes, usedImageUrls] = await Promise.all([
+    getUsedValues('quote'),
+    getUsedValues('image_url'),
+  ])
+  console.log(`[${jobId}] History: ${usedQuotes.length} used quotes, ${usedImageUrls.length} used images`)
+
   // Step 1 — Generate quote
   console.log(`[${jobId}] Step 1: Generating quote...`)
   await updateJob(jobId, { status: 'processing', currentStep: 1, stepName: 'Generating quote...', progress: 10 })
-  const quoteResult = await generateQuote(topic)
+  const quoteResult = await generateQuote(topic, usedQuotes)
   console.log(`[${jobId}] Step 1 done — quote: "${quoteResult.quote}" by ${quoteResult.author}`)
   await updateJob(jobId, { progress: 25 })
 
   // Step 2 — Fetch image
   console.log(`[${jobId}] Step 2: Fetching image for keyword: "${quoteResult.imageKeyword}"`)
   await updateJob(jobId, { currentStep: 2, stepName: 'Fetching image...', progress: 25 })
-  const imagePath = await fetchImage(quoteResult.imageKeyword, jobId)
+  const { imagePath, imageUrl } = await fetchImage(quoteResult.imageKeyword, jobId, usedImageUrls)
   console.log(`[${jobId}] Step 2 done — image: ${imagePath}`)
   await updateJob(jobId, { progress: 50 })
 
@@ -80,11 +88,18 @@ async function runQuotePipeline(jobId: string, topic: string): Promise<void> {
   const downloadUrl = await uploadToR2(jobId, videoPath)
   console.log(`[${jobId}] Step 5 done — url: ${downloadUrl}`)
 
+  // Save to history
+  await Promise.all([
+    saveUsedValue('quote', quoteResult.quote),
+    saveUsedValue('image_url', imageUrl),
+  ])
+  console.log(`[${jobId}] History saved`)
+
   await updateJob(jobId, {
     status: 'completed',
     progress: 100,
     downloadUrl,
-    title: `"${quoteResult.quote}" — ${quoteResult.author}`,
+    title: `"${quoteResult.quote}"${quoteResult.author ? ` — ${quoteResult.author}` : ''}`,
     hashtags: ['#motivation', '#quotes', '#mindset', '#success', '#fyp'],
   })
   console.log(`[${jobId}] Quote pipeline completed successfully`)

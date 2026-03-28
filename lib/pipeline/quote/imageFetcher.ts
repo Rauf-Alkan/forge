@@ -12,7 +12,16 @@ type PexelsPhotoResponse = {
   photos: PexelsPhoto[]
 }
 
-export async function fetchImage(keyword: string, jobId: string): Promise<string> {
+export type FetchImageResult = {
+  imagePath: string
+  imageUrl: string
+}
+
+export async function fetchImage(
+  keyword: string,
+  jobId: string,
+  excludedUrls: string[] = []
+): Promise<FetchImageResult> {
   const apiKey = process.env.PEXELS_API_KEY
   if (!apiKey) throw new Error('PEXELS_API_KEY is not set')
 
@@ -23,7 +32,7 @@ export async function fetchImage(keyword: string, jobId: string): Promise<string
       params: {
         query: keyword,
         orientation: 'portrait',
-        per_page: 10,
+        per_page: 15,
       },
     }
   )
@@ -33,7 +42,14 @@ export async function fetchImage(keyword: string, jobId: string): Promise<string
     throw new Error(`No image found for keyword: "${keyword}"`)
   }
 
-  const photo = photos[Math.floor(Math.random() * Math.min(5, photos.length))]
+  // Filter out previously used photos
+  const available = photos.filter((p) => {
+    const url = p.src.portrait || p.src.large
+    return !excludedUrls.includes(url)
+  })
+
+  const pool = available.length > 0 ? available : photos // fallback to all if all used
+  const photo = pool[Math.floor(Math.random() * Math.min(5, pool.length))]
   const imageUrl = photo.src.portrait || photo.src.large
 
   const destPath = `/tmp/image_${jobId}.jpg`
@@ -42,10 +58,12 @@ export async function fetchImage(keyword: string, jobId: string): Promise<string
     responseType: 'stream',
   })
 
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const writer = fs.createWriteStream(destPath)
     imageResponse.data.pipe(writer)
-    writer.on('finish', () => resolve(destPath))
+    writer.on('finish', () => resolve())
     writer.on('error', reject)
   })
+
+  return { imagePath: destPath, imageUrl }
 }
