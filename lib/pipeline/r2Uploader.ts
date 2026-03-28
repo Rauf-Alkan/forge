@@ -20,14 +20,14 @@ function getS3Client(): S3Client {
   })
 }
 
-export async function uploadToR2(jobId: string): Promise<string> {
+export async function uploadToR2(jobId: string, filePath?: string): Promise<string> {
   const bucket = process.env.R2_BUCKET
   const publicUrl = process.env.R2_PUBLIC_URL
 
   if (!bucket) throw new Error('R2_BUCKET is not set')
   if (!publicUrl) throw new Error('R2_PUBLIC_URL is not set')
 
-  const filePath = `/tmp/final_${jobId}.mp4`
+  if (!filePath) filePath = `/tmp/final_${jobId}.mp4`
   const key = `forge_${jobId}.mp4`
 
   const fileBuffer = fs.readFileSync(filePath)

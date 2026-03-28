@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { JobStatus } from '@/lib/jobStore'
 import GenerateForm from '@/components/GenerateForm'
+import QuoteForm from '@/components/QuoteForm'
 import ProgressTracker from '@/components/ProgressTracker'
 import VideoPreview from '@/components/VideoPreview'
 
@@ -11,7 +12,10 @@ function getToken(): string {
   return localStorage.getItem('forge_token') ?? ''
 }
 
+type Tab = 'video' | 'quote'
+
 export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('video')
   const [jobId, setJobId] = useState<string | null>(null)
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
   const [isPolling, setIsPolling] = useState(false)
@@ -49,9 +53,29 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [isPolling, jobId, pollStatus])
 
-  async function handleSubmit(topic: string) {
+  async function handleVideoSubmit(topic: string) {
     try {
       const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forge-token': getToken(),
+        },
+        body: JSON.stringify({ topic }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to start generation')
+      setJobId(data.jobId)
+      setJobStatus(null)
+      setIsPolling(true)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to start generation')
+    }
+  }
+
+  async function handleQuoteSubmit(topic: string) {
+    try {
+      const res = await fetch('/api/generate-quote', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,6 +102,11 @@ export default function DashboardPage() {
   function handleLogout() {
     localStorage.removeItem('forge_token')
     router.push('/')
+  }
+
+  function handleTabChange(tab: Tab) {
+    setActiveTab(tab)
+    handleReset()
   }
 
   const showForm = !jobId
@@ -149,9 +178,42 @@ export default function DashboardPage() {
       </header>
 
       {/* Main */}
-      <main className="relative z-10 max-w-xl mx-auto px-4 py-12">
+      <main className="relative z-10 max-w-xl mx-auto px-4 py-10">
+        {/* Tabs */}
+        {showForm && (
+          <div className="flex gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl mb-8">
+            <button
+              onClick={() => handleTabChange('video')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === 'video'
+                  ? 'bg-[#0a0d14] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-gray-600 hover:text-gray-400'
+              }`}
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path d="M3.25 4A2.25 2.25 0 001 6.25v7.5A2.25 2.25 0 003.25 16h7.5A2.25 2.25 0 0013 13.75v-7.5A2.25 2.25 0 0010.75 4h-7.5zM19 4.75a.75.75 0 00-1.28-.53l-3 3a.75.75 0 00-.22.53v4.5c0 .199.079.39.22.53l3 3a.75.75 0 001.28-.53V4.75z" />
+              </svg>
+              Video
+            </button>
+            <button
+              onClick={() => handleTabChange('quote')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === 'quote'
+                  ? 'bg-[#0a0d14] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-gray-600 hover:text-gray-400'
+              }`}
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 4.014 1 5.426v5.148c0 1.413.993 2.671 2.43 2.902 1.168.188 2.352.327 3.55.414.28.02.521.18.642.413l1.713 3.293a.75.75 0 001.33 0l1.713-3.293a.763.763 0 01.642-.413 41.102 41.102 0 003.55-.414c1.437-.231 2.43-1.49 2.43-2.902V5.426c0-1.413-.993-2.671-2.43-2.902A41.289 41.289 0 0010 2zM6.75 6a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 2.5a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z" clipRule="evenodd" />
+              </svg>
+              Quote
+            </button>
+          </div>
+        )}
+
         <div className="animate-fade-in">
-          {showForm && <GenerateForm onSubmit={handleSubmit} />}
+          {showForm && activeTab === 'video' && <GenerateForm onSubmit={handleVideoSubmit} />}
+          {showForm && activeTab === 'quote' && <QuoteForm onSubmit={handleQuoteSubmit} />}
 
           {showProgress && jobStatus && (
             <ProgressTracker jobStatus={jobStatus} onReset={handleReset} />
