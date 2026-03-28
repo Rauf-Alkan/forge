@@ -81,7 +81,7 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   // ADIM 5 — Music + Assemble
   console.log(`[${jobId}] Step 5: Downloading background music...`)
   await updateJob(jobId, { currentStep: 5, stepName: 'Assembling video...', progress: 75 })
-  const musicPath = await downloadMusic(jobId)
+  const musicPath = await downloadMusic(jobId, 'energetic')
   console.log(`[${jobId}] Step 5: Music: ${musicPath ?? 'none'}, assembling video...`)
   await assembleVideo(jobId, videoPaths, musicPath)
   console.log(`[${jobId}] Step 5 done`)

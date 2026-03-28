@@ -72,7 +72,7 @@ async function runQuotePipeline(jobId: string, topic: string): Promise<void> {
   // Step 3 — Download music
   console.log(`[${jobId}] Step 3: Downloading background music...`)
   await updateJob(jobId, { currentStep: 3, stepName: 'Downloading music...', progress: 50 })
-  const musicPath = await downloadMusic(jobId)
+  const musicPath = await downloadMusic(jobId, 'calm')
   console.log(`[${jobId}] Step 3: Music: ${musicPath ?? 'none'}`)
   await updateJob(jobId, { progress: 65 })
 
