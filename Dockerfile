@@ -25,7 +25,4 @@ RUN npm run build && \
 EXPOSE 3000
 ENV NODE_ENV=production
 
-CMD echo ">>> Running DB migrations..." && \
-    npx prisma migrate deploy && \
-    echo ">>> Starting app..." && \
-    npm start
+CMD echo ">>> Starting app..." && npm start
