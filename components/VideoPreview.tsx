@@ -78,7 +78,7 @@ export default function VideoPreview({ jobStatus, onReset }: Props) {
                   ? 'bg-blue-900/30 text-blue-400 border-blue-700/30'
                   : 'bg-yellow-900/30 text-yellow-400 border-yellow-700/30'
               }`}>
-                {qualityScore >= 85 ? '✓ Quality: Excellent' : qualityScore >= 70 ? '✓ Quality: Good' : '~ Quality: Passed'}
+                {qualityScore >= 85 ? 'Quality: Excellent ✓' : qualityScore >= 70 ? 'Quality: Good ✓' : 'Quality: Passed (borderline)'}
                 <span className="opacity-60">({qualityScore}/100)</span>
               </div>
             )}

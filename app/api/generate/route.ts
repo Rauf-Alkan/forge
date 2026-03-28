@@ -145,12 +145,15 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   })
   console.log(`[${jobId}] Description done`)
 
+  // Normalize hashtags — ensure # prefix
+  const hashtags = scriptResult.hashtags.map((t) => t.startsWith('#') ? t : `#${t}`)
+
   await updateJob(jobId, {
     status: 'completed',
     progress: 100,
     downloadUrl,
     title: scriptResult.title,
-    hashtags: scriptResult.hashtags,
+    hashtags,
     description,
   })
   console.log(`[${jobId}] Pipeline completed — quality: ${qualityScore.total}/100, retries: ${attempts}`)

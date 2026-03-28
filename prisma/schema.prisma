@@ -27,7 +27,7 @@ model Job {
 
 model ContentHistory {
   id        String   @id @default(cuid())
-  type      String   // "quote" | "image_url"
+  type      String   // "quote" | "image_url" | "video_topic" | "video_hook"
   value     String
   createdAt DateTime @default(now())
 }
