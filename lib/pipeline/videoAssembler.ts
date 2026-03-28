@@ -31,19 +31,19 @@ export async function assembleVideo(
 
   const audioDuration = await getAudioDuration(audioPath)
 
-  // Subtitle style — TikTok: big, centered, white with thick black outline
+  // Subtitle style — TikTok: large bold font, thick outline, higher position
   const subtitleStyle = [
     'FontName=DejaVu Sans',
-    'FontSize=13',
+    'FontSize=22',
     'Bold=1',
     'PrimaryColour=&H00FFFFFF',
     'OutlineColour=&H00000000',
-    'Outline=2',
-    'Shadow=1',
+    'Outline=3',
+    'Shadow=2',
     'Alignment=2',
-    'MarginL=30',
-    'MarginR=30',
-    'MarginV=80',
+    'MarginL=40',
+    'MarginR=40',
+    'MarginV=120',
   ].join('\\,')
 
   const n = videoPaths.length
@@ -92,7 +92,7 @@ export async function assembleVideo(
         ...clipFilters,
         concatFilter,
         effectsFilter,
-        `[${audioIdx}:a]volume=1.0[voice]`,
+        `[${audioIdx}:a]loudnorm=I=-14:TP=-1.5:LRA=11[voice]`,
         `[${musicIdx}:a]volume=0.12,afade=t=in:st=0:d=2,afade=t=out:st=${Math.max(0, audioDuration - 2)}:d=2[music]`,
         '[voice][music]amix=inputs=2:duration=first:dropout_transition=2[a]',
       ]
@@ -105,11 +105,12 @@ export async function assembleVideo(
         ...clipFilters,
         concatFilter,
         effectsFilter,
+        `[${audioIdx}:a]loudnorm=I=-14:TP=-1.5:LRA=11[a]`,
       ]
 
       cmd
         .complexFilter(filters)
-        .outputOptions([...outputOptions, `-map ${audioIdx}:a`])
+        .outputOptions([...outputOptions, '-map [a]'])
     }
 
     cmd

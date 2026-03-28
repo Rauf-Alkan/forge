@@ -18,7 +18,7 @@ const TIKTOK_RULES = `
 
 PLATFORM: TikTok
 - First word must be powerful — a single punch word (e.g. "Most", "Stop", "Rich", "Nobody")
-- Design for LOOP: last sentence must connect back to the hook naturally so the viewer watches again
+- Design for LOOP: CTA must reference the hook topic so the last sentence pulls the viewer back to rewatch (e.g. hook "Your morning routine is making you poor" → CTA "Fix your morning, fix your income — follow for the exact routine")
 - Provoke EXACTLY ONE emotion: curiosity OR controversy OR aspiration — never mix
 - Write for SILENT viewing AND sound-on viewing simultaneously (every word works without audio context)
 - Completion rate goal: structure the script so the viewer watches 2+ times
@@ -51,7 +51,12 @@ ABSOLUTELY BANNED hooks:
 - "The secret to success is..."
 - "In today's video..."
 - "Hey guys, welcome back"
+- "The one thing..."
+- "Most people think..."
+- "Here's the thing..."
+- "Let me tell you..."
 - Any question starting with "What if"
+- Any opener starting with "Most" (overused)
 - Generic motivational openers
 
 ═══ SCRIPT STRUCTURE (55-65 words total — strict) ═══
