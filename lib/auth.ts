@@ -4,10 +4,6 @@ export function checkPassword(password: string): boolean {
   return password === appPassword
 }
 
-export function generateToken(): string {
-  return crypto.randomUUID()
-}
-
 export function verifyToken(token: string): boolean {
   const appPassword = process.env.APP_PASSWORD
   if (!appPassword) return false
