@@ -53,7 +53,6 @@ export async function assembleVideo(
     'crop=1080:1920',
     'setsar=1',
     'eq=brightness=-0.05:contrast=1.2:saturation=1.3:gamma=0.92',
-    'vignette=PI/4',
     `subtitles=${subtitlesPath}:force_style='${subtitleStyle}'`,
     '[v]',
   ].join(',')
