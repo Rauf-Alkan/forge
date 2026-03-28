@@ -52,7 +52,7 @@ export async function assembleVideo(
     '[0:v]scale=1080:1920:force_original_aspect_ratio=increase',
     'crop=1080:1920',
     'setsar=1',
-    'eq=brightness=-0.05:contrast=1.2:saturation=1.3:gamma=0.92',
+    'eq=brightness=-0.05:contrast=1.2:saturation=1.3',
     `subtitles=${subtitlesPath}:force_style='${subtitleStyle}'`,
     '[v]',
   ].join(',')
@@ -96,7 +96,7 @@ export async function assembleVideo(
     cmd
       .output(outputPath)
       .on('end', () => resolve())
-      .on('error', (err) => reject(err))
+      .on('error', (err, _stdout, stderr) => reject(new Error(`${err.message}\nFFmpeg stderr: ${stderr}`)))
       .run()
   })
 
