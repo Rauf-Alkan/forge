@@ -1,6 +1,14 @@
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
 
+function escapeDrawtextText(text: string): string {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/:/g, '\\:')
+    .replace(/,/g, '\\,')
+}
+
 function getAudioDuration(audioPath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(audioPath, (err, metadata) => {
@@ -17,7 +25,8 @@ function getAudioDuration(audioPath: string): Promise<number> {
 export async function assembleVideo(
   jobId: string,
   videoPaths: string[],
-  musicPath: string | null = null
+  musicPath: string | null = null,
+  hook?: string
 ): Promise<string> {
   const audioPath = `/tmp/audio_${jobId}.mp3`
   const subtitlesPath = `/tmp/subtitles_${jobId}.srt`
@@ -59,10 +68,24 @@ export async function assembleVideo(
   const concatInputLabels = videoPaths.map((_, i) => `[v${i}]`).join('')
   const concatFilter = `${concatInputLabels}concat=n=${n}:v=1:a=0[vcat]`
 
-  // Apply effects + subtitles
+  // Hook card: large centered text overlay for first 0.6s
+  const hookCardFilter = hook ? (() => {
+    const fontPath = '/usr/share/fonts/ttf-dejavu/DejaVuSans-Bold.ttf'
+    const words = hook.split(' ')
+    const lines: string[] = []
+    for (let i = 0; i < words.length; i += 4) {
+      lines.push(words.slice(i, i + 4).join(' '))
+    }
+    const text = lines.map(escapeDrawtextText).join('\\n')
+    return `,drawtext=enable='lte(t,0.6)':fontfile=${fontPath}:text='${text}':fontsize=68:fontcolor=white:x=(w-tw)/2:y=(h-th)/2:line_spacing=12:box=1:boxcolor=black@0.65:boxborderw=24`
+  })() : ''
+
+  // Apply color grading + effects + hook card + subtitles
   const effectsFilter =
     `[vcat]setsar=1,` +
-    `eq=brightness=-0.05:contrast=1.2:saturation=1.3,` +
+    `eq=brightness=0.02:contrast=1.08:saturation=0.85,` +
+    `curves=r='0/0 0.5/0.48 1/1':g='0/0 0.5/0.5 1/0.95':b='0/0 0.5/0.52 1/1'` +
+    hookCardFilter + `,` +
     `subtitles=${subtitlesPath}:force_style='${subtitleStyle}'[v]`
 
   const outputOptions = [

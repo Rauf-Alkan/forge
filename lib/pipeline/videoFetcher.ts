@@ -42,10 +42,19 @@ Rules:
 - Must return actual video results on Pexels
 - Order from most specific to most generic (fallback chain)
 
+VISUAL CONSISTENCY RULE (critical):
+- All scenes must feature people in professional/business contexts
+- Consistent energy throughout — do NOT mix casual and corporate
+- Preferred environments: office, city street, coffee shop meeting, laptop work, phone screen, whiteboard
+- BANNED scene types: bedroom, sleeping, beach, vacation, leisure, relaxing
+- If topic is about entrepreneurship/money/success → always use people in action, not objects
+
 Convert abstract → concrete:
 "failure" → "businessman head down desk"
 "success" → "entrepreneur fist pump office"
 "hustle" → "person working late night laptop"
+"money" → "professional counting cash office"
+"growth" → "entrepreneur celebrating phone screen"
 
 Return ONLY a JSON array: ["term1", "term2", "term3"]`,
       }],
