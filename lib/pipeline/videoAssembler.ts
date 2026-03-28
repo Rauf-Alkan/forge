@@ -20,7 +20,6 @@ export async function assembleVideo(
   musicPath: string | null = null
 ): Promise<string> {
   const audioPath = `/tmp/audio_${jobId}.mp3`
-  const concatPath = `/tmp/concat_${jobId}.txt`
   const subtitlesPath = `/tmp/subtitles_${jobId}.srt`
   const outputPath = `/tmp/final_${jobId}.mp4`
 
@@ -31,9 +30,6 @@ export async function assembleVideo(
   }
 
   const audioDuration = await getAudioDuration(audioPath)
-
-  const concatContent = videoPaths.map((p) => `file '${p}'`).join('\n')
-  fs.writeFileSync(concatPath, concatContent)
 
   // Subtitle style — TikTok: big, centered, white with thick black outline
   const subtitleStyle = [
@@ -50,36 +46,54 @@ export async function assembleVideo(
     'MarginV=80',
   ].join('\\,')
 
-  const videoFilter =
-    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,` +
-    `crop=1080:1920,setsar=1,` +
+  const n = videoPaths.length
+  const audioIdx = n       // audio input index
+  const musicIdx = n + 1   // music input index (if used)
+
+  // Normalize each clip: consistent resolution, 30fps, reset timestamps
+  const clipFilters = videoPaths.map((_, i) =>
+    `[${i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,setpts=PTS-STARTPTS[v${i}]`
+  )
+
+  // Concatenate normalized clips
+  const concatInputLabels = videoPaths.map((_, i) => `[v${i}]`).join('')
+  const concatFilter = `${concatInputLabels}concat=n=${n}:v=1:a=0[vcat]`
+
+  // Apply effects + subtitles
+  const effectsFilter =
+    `[vcat]setsar=1,` +
     `eq=brightness=-0.05:contrast=1.2:saturation=1.3,` +
     `subtitles=${subtitlesPath}:force_style='${subtitleStyle}'[v]`
 
+  const outputOptions = [
+    '-map [v]',
+    '-c:v libx264',
+    '-preset fast',
+    '-crf 23',
+    '-c:a aac',
+    '-b:a 192k',
+    `-t ${audioDuration}`,
+    '-movflags +faststart',
+  ]
+
   await new Promise<void>((resolve, reject) => {
     const cmd = ffmpeg()
-      .input(concatPath)
-      .inputOptions(['-f concat', '-safe 0'])
-      .input(audioPath)
 
-    const outputOptions = [
-      '-map [v]',
-      '-c:v libx264',
-      '-preset fast',
-      '-crf 23',
-      '-c:a aac',
-      '-b:a 192k',
-      `-t ${audioDuration}`,
-      '-movflags +faststart',
-    ]
+    // Add each video clip as a separate input
+    for (const vp of videoPaths) {
+      cmd.input(vp)
+    }
+    cmd.input(audioPath)
 
     if (musicPath && fs.existsSync(musicPath)) {
       cmd.input(musicPath)
 
       const filters = [
-        videoFilter,
-        '[1:a]volume=1.0[voice]',
-        `[2:a]volume=0.12,afade=t=in:st=0:d=2,afade=t=out:st=${Math.max(0, audioDuration - 2)}:d=2[music]`,
+        ...clipFilters,
+        concatFilter,
+        effectsFilter,
+        `[${audioIdx}:a]volume=1.0[voice]`,
+        `[${musicIdx}:a]volume=0.12,afade=t=in:st=0:d=2,afade=t=out:st=${Math.max(0, audioDuration - 2)}:d=2[music]`,
         '[voice][music]amix=inputs=2:duration=first:dropout_transition=2[a]',
       ]
 
@@ -87,9 +101,15 @@ export async function assembleVideo(
         .complexFilter(filters)
         .outputOptions([...outputOptions, '-map [a]'])
     } else {
+      const filters = [
+        ...clipFilters,
+        concatFilter,
+        effectsFilter,
+      ]
+
       cmd
-        .complexFilter([videoFilter])
-        .outputOptions([...outputOptions, '-map 1:a'])
+        .complexFilter(filters)
+        .outputOptions([...outputOptions, `-map ${audioIdx}:a`])
     }
 
     cmd
@@ -99,7 +119,7 @@ export async function assembleVideo(
       .run()
   })
 
-  const tempFiles = [audioPath, concatPath, subtitlesPath, ...videoPaths]
+  const tempFiles = [audioPath, subtitlesPath, ...videoPaths]
   if (musicPath) tempFiles.push(musicPath)
 
   for (const file of tempFiles) {
