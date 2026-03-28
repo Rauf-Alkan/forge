@@ -18,10 +18,48 @@ type QuoteDescriptionInput = {
 type DescriptionInput = VideoDescriptionInput | QuoteDescriptionInput
 
 export async function generateDescription(input: DescriptionInput): Promise<string> {
-  const context =
-    input.type === 'video'
-      ? `Video title: "${input.title}"\nOpening hook: "${input.hook}"\nHashtags: ${input.hashtags.join(' ')}`
-      : `Quote: "${input.quote}"${input.author ? `\nAuthor: ${input.author}` : ''}`
+  if (input.type === 'video') {
+    const { title, hook, hashtags } = input
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.85,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a viral content strategist for English-speaking global audiences.
+
+Write a YouTube Shorts / TikTok description for this video.
+
+Title: ${title}
+Hook: ${hook}
+Hashtags: ${hashtags.join(' ')}
+
+STRUCTURE:
+Line 1: Expand the hook — make them feel the pain or curiosity (max 15 words)
+Line 2: What they'll gain from this video (specific, not vague)
+Line 3: CTA — one of: "Follow for daily entrepreneur insights" / "Save this for when you need it" / "Comment your biggest challenge below"
+Line 4: Hashtags (space-separated)
+
+RULES:
+- Total max 4 lines
+- Conversational, not corporate
+- Max 2 emojis total
+- No line starts with "In this video"
+- No "Don't forget to like and subscribe"
+- No exclamation marks overload (max 1)
+
+OUTPUT: Only the description text. No explanation. No JSON.`,
+        },
+      ],
+    })
+
+    return (response.choices[0]?.message?.content ?? '').trim()
+  }
+
+  // Quote pipeline — unchanged format
+  const { quote, author } = input
+  const context = `Quote: "${quote}"${author ? `\nAuthor: ${author}` : ''}`
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

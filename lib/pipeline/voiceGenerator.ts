@@ -17,11 +17,11 @@ export async function generateVoice(script: string, jobId: string): Promise<stri
       },
       body: JSON.stringify({
         text: script,
-        model_id: 'eleven_multilingual_v2',
+        model_id: 'eleven_turbo_v2_5',
         voice_settings: {
-          stability: 0.28,
-          similarity_boost: 0.85,
-          style: 0.65,
+          stability: 0.45,
+          similarity_boost: 0.82,
+          style: 0.30,
           use_speaker_boost: true,
         },
       }),

@@ -1,3 +1,4 @@
+import OpenAI from 'openai'
 import axios from 'axios'
 import fs from 'fs'
 
@@ -15,6 +16,48 @@ type PexelsVideo = {
 
 type PexelsResponse = {
   videos: PexelsVideo[]
+}
+
+async function enrichVisualKeyword(
+  rawKeyword: string,
+  scriptContext: string,
+  sceneIndex: number
+): Promise<string[]> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{
+        role: 'user',
+        content: `Video script context: "${scriptContext}"
+Scene ${sceneIndex + 1} keyword: "${rawKeyword}"
+
+Generate 3 Pexels video search terms for this specific scene.
+
+Rules:
+- English only
+- 2-4 words each
+- Concrete and visual (no abstract concepts)
+- Must return actual video results on Pexels
+- Order from most specific to most generic (fallback chain)
+
+Convert abstract → concrete:
+"failure" → "businessman head down desk"
+"success" → "entrepreneur fist pump office"
+"hustle" → "person working late night laptop"
+
+Return ONLY a JSON array: ["term1", "term2", "term3"]`,
+      }],
+      temperature: 0.7,
+    })
+
+    const content = response.choices[0]?.message?.content ?? ''
+    const raw = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    return JSON.parse(raw) as string[]
+  } catch {
+    return [rawKeyword, 'entrepreneur working office', 'business professional success']
+  }
 }
 
 async function searchPexels(keyword: string): Promise<PexelsVideo | null> {
@@ -37,16 +80,10 @@ async function searchPexels(keyword: string): Promise<PexelsVideo | null> {
   const videos = response.data.videos
   if (!videos || videos.length === 0) return null
 
-  // Filter to videos with valid file lists
-  const valid = videos.filter(
-    (v) => v.video_files && v.video_files.length > 0
-  )
+  const valid = videos.filter((v) => v.video_files && v.video_files.length > 0)
   if (valid.length === 0) return null
 
-  const filtered = valid.filter(
-    (v) => v.duration >= 3 && v.duration <= 7
-  )
-
+  const filtered = valid.filter((v) => v.duration >= 3 && v.duration <= 7)
   const candidates = filtered.length > 0 ? filtered : valid
 
   candidates.sort((a, b) => {
@@ -84,19 +121,29 @@ async function downloadVideo(url: string, destPath: string): Promise<void> {
 
 export async function fetchVideos(
   keywords: string[],
-  jobId: string
+  jobId: string,
+  scriptContext = ''
 ): Promise<string[]> {
   const FALLBACK = 'luxury city night'
 
   const downloadTasks = keywords.map(async (keyword, index) => {
-    let video = await searchPexels(keyword)
+    // Enrich keyword into a fallback chain
+    const searchTerms = scriptContext
+      ? await enrichVisualKeyword(keyword, scriptContext, index)
+      : [keyword, FALLBACK]
 
-    if (!video) {
-      video = await searchPexels(FALLBACK)
+    // Try each term in the fallback chain
+    let video: PexelsVideo | null = null
+    for (const term of searchTerms) {
+      video = await searchPexels(term)
+      if (video) break
     }
 
+    // Final fallback
+    if (!video) video = await searchPexels(FALLBACK)
+
     if (!video) {
-      throw new Error(`No video found for keyword: "${keyword}" or fallback`)
+      throw new Error(`No video found for keyword: "${keyword}" or any fallback`)
     }
 
     const bestFile = getBestFile(video.video_files)

@@ -10,6 +10,8 @@ import { assembleVideo } from '@/lib/pipeline/videoAssembler'
 import { downloadMusic } from '@/lib/pipeline/musicProvider'
 import { uploadToR2 } from '@/lib/pipeline/r2Uploader'
 import { generateDescription } from '@/lib/pipeline/descriptionGenerator'
+import { scoreScript } from '@/lib/pipeline/qualityScorer'
+import { getUsedValues, saveUsedValue } from '@/lib/contentHistory'
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +30,6 @@ export async function POST(req: NextRequest) {
     const jobId = uuidv4()
     await createJob(jobId)
 
-    // Return immediately — pipeline runs in background
     const response = NextResponse.json({ jobId })
 
     runPipeline(jobId, topic).catch(async (err) => {
@@ -50,12 +51,53 @@ export async function POST(req: NextRequest) {
 async function runPipeline(jobId: string, topic: string): Promise<void> {
   console.log(`[${jobId}] Pipeline started — topic: "${topic}"`)
 
+  // Load content history for deduplication
+  const usedHooks = await getUsedValues('video_hook')
+  console.log(`[${jobId}] Loaded ${usedHooks.length} used hooks from history`)
+
   // ADIM 1 — Script
   console.log(`[${jobId}] Step 1: Generating script...`)
   await updateJob(jobId, { status: 'processing', currentStep: 1, stepName: 'Writing script...', progress: 5 })
-  const scriptResult = await generateScript(topic)
-  console.log(`[${jobId}] Step 1 done — title: "${scriptResult.title}", keywords: ${scriptResult.keywords.join(', ')}`)
-  await updateJob(jobId, { progress: 20 })
+  let scriptResult = await generateScript(topic, undefined, usedHooks)
+  console.log(`[${jobId}] Step 1 done — hook: "${scriptResult.hook}" (format ${scriptResult.hookFormat})`)
+
+  // QUALITY GATE
+  console.log(`[${jobId}] Quality check...`)
+  let qualityScore = await scoreScript({
+    script: scriptResult.script,
+    hook: scriptResult.hook,
+    topic,
+    hookFormat: scriptResult.hookFormat ?? 'A',
+  })
+  console.log(`[${jobId}] Quality score: ${qualityScore.total}/100 (passed: ${qualityScore.passed})`)
+
+  const MAX_ATTEMPTS = 2
+  let attempts = 0
+
+  while (!qualityScore.passed && attempts < MAX_ATTEMPTS) {
+    attempts++
+    console.log(`[${jobId}] Quality failed — attempt ${attempts}. Feedback: ${qualityScore.improvementFeedback}`)
+    await updateJob(jobId, {
+      stepName: `Quality check: ${qualityScore.total}/100. Improving... (${attempts}/${MAX_ATTEMPTS})`,
+      progress: 12,
+    })
+    scriptResult = await generateScript(topic, qualityScore.improvementFeedback, usedHooks)
+    qualityScore = await scoreScript({
+      script: scriptResult.script,
+      hook: scriptResult.hook,
+      topic,
+      hookFormat: scriptResult.hookFormat ?? 'A',
+    })
+    console.log(`[${jobId}] Retry ${attempts} quality score: ${qualityScore.total}/100`)
+  }
+
+  await updateJob(jobId, { qualityScore: qualityScore.total, retryCount: attempts, progress: 20 })
+
+  // Save hook to history (after quality gate)
+  await Promise.all([
+    saveUsedValue('video_topic', topic),
+    saveUsedValue('video_hook', scriptResult.hook),
+  ])
 
   // ADIM 2 — Voice
   console.log(`[${jobId}] Step 2: Generating voice...`)
@@ -64,11 +106,11 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   console.log(`[${jobId}] Step 2 done`)
   await updateJob(jobId, { progress: 40 })
 
-  // ADIM 3 — Visuals
+  // ADIM 3 — Visuals (with semantic enrichment)
   console.log(`[${jobId}] Step 3: Fetching videos from Pexels...`)
   await updateJob(jobId, { currentStep: 3, stepName: 'Fetching visuals...', progress: 40 })
-  const videoPaths = await fetchVideos(scriptResult.keywords, jobId)
-  console.log(`[${jobId}] Step 3 done — downloaded ${videoPaths.length} videos: ${videoPaths.join(', ')}`)
+  const videoPaths = await fetchVideos(scriptResult.visualSearchTerms, jobId, scriptResult.script)
+  console.log(`[${jobId}] Step 3 done — ${videoPaths.length} videos downloaded`)
   await updateJob(jobId, { progress: 60 })
 
   // ADIM 4 — Subtitles
@@ -79,20 +121,21 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   await updateJob(jobId, { progress: 75 })
 
   // ADIM 5 — Music + Assemble
-  console.log(`[${jobId}] Step 5: Downloading background music...`)
+  console.log(`[${jobId}] Step 5: Assembling video...`)
   await updateJob(jobId, { currentStep: 5, stepName: 'Assembling video...', progress: 75 })
   const musicPath = await downloadMusic(jobId, 'energetic')
-  console.log(`[${jobId}] Step 5: Music: ${musicPath ?? 'none'}, assembling video...`)
+  console.log(`[${jobId}] Music: ${musicPath ?? 'none'}`)
   await assembleVideo(jobId, videoPaths, musicPath)
   console.log(`[${jobId}] Step 5 done`)
   await updateJob(jobId, { progress: 90 })
 
   // ADIM 6 — Upload
   console.log(`[${jobId}] Step 6: Uploading to R2...`)
-  await updateJob(jobId, { stepName: 'Uploading...', progress: 90 })
+  await updateJob(jobId, { currentStep: 6, stepName: 'Uploading...', progress: 90 })
   const downloadUrl = await uploadToR2(jobId)
   console.log(`[${jobId}] Step 6 done — url: ${downloadUrl}`)
 
+  // Description
   console.log(`[${jobId}] Generating TikTok description...`)
   const description = await generateDescription({
     type: 'video',
@@ -102,6 +145,13 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   })
   console.log(`[${jobId}] Description done`)
 
-  await updateJob(jobId, { status: 'completed', progress: 100, downloadUrl, title: scriptResult.title, hashtags: scriptResult.hashtags, description })
-  console.log(`[${jobId}] Pipeline completed successfully`)
+  await updateJob(jobId, {
+    status: 'completed',
+    progress: 100,
+    downloadUrl,
+    title: scriptResult.title,
+    hashtags: scriptResult.hashtags,
+    description,
+  })
+  console.log(`[${jobId}] Pipeline completed — quality: ${qualityScore.total}/100, retries: ${attempts}`)
 }

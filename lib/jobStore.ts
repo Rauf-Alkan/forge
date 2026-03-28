@@ -11,6 +11,8 @@ export type JobStatus = {
   title?: string
   hashtags?: string[]
   description?: string
+  qualityScore?: number
+  retryCount?: number
   createdAt: Date
 }
 
@@ -43,6 +45,8 @@ export async function getJob(jobId: string): Promise<JobStatus | null> {
     title: job.title ?? undefined,
     hashtags: job.hashtags,
     description: job.description ?? undefined,
+    qualityScore: job.qualityScore ?? undefined,
+    retryCount: job.retryCount,
     createdAt: job.createdAt,
   }
 }

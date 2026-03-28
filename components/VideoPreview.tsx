@@ -9,7 +9,7 @@ type Props = {
 }
 
 export default function VideoPreview({ jobStatus, onReset }: Props) {
-  const { downloadUrl, title, hashtags, description } = jobStatus
+  const { downloadUrl, title, hashtags, description, qualityScore } = jobStatus
   const [copiedTag, setCopiedTag] = useState<string | null>(null)
   const [copiedAll, setCopiedAll] = useState(false)
   const [copiedDesc, setCopiedDesc] = useState(false)
@@ -69,6 +69,20 @@ export default function VideoPreview({ jobStatus, onReset }: Props) {
             </div>
 
             <h2 className="text-xl font-bold text-white">Video Ready</h2>
+
+            {qualityScore !== undefined && (
+              <div className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-medium border ${
+                qualityScore >= 85
+                  ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700/30'
+                  : qualityScore >= 70
+                  ? 'bg-blue-900/30 text-blue-400 border-blue-700/30'
+                  : 'bg-yellow-900/30 text-yellow-400 border-yellow-700/30'
+              }`}>
+                {qualityScore >= 85 ? '✓ Quality: Excellent' : qualityScore >= 70 ? '✓ Quality: Good' : '~ Quality: Passed'}
+                <span className="opacity-60">({qualityScore}/100)</span>
+              </div>
+            )}
+
             {title && (
               <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
                 {title}

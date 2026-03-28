@@ -5,50 +5,93 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 export type ScriptResult = {
   script: string
   hook: string
-  keywords: string[]
+  visualSearchTerms: string[]
   title: string
   hashtags: string[]
+  hookFormat: string
 }
 
-export async function generateScript(topic: string): Promise<ScriptResult> {
-  const systemPrompt =
-    'You are an expert viral TikTok scriptwriter specializing in motivation, wealth mindset, and financial freedom content. You study accounts like @millionaire_mentor, @wealthpsychology, and similar creators with millions of followers. You understand that the most viral motivation content triggers a psychological identity shift — the viewer must feel like they are being spoken to directly, that this video found THEM. You use contrast (poor mindset vs rich mindset), urgency, and visceral imagery. You never use filler words. Every word earns its place.'
+export async function generateScript(
+  topic: string,
+  improvementFeedback?: string,
+  excludedHooks?: string[]
+): Promise<ScriptResult> {
+  const systemPrompt = `You are an elite short-form video content strategist with 10+ years experience creating viral entrepreneurship content for global audiences.
 
-  const userPrompt = `Create a 28-33 second faceless motivation/wealth TikTok script about: ${topic}
+TARGET AUDIENCE: English-speaking, 22-40 years old, aspiring entrepreneurs
+Markets: United States, United Kingdom, Canada, Australia
 
-Script structure:
-- Line 1: PATTERN INTERRUPT hook — shocking, identity-challenging, or forbidden knowledge (max 8 words). Examples: "Nobody tells poor people this secret.", "The rich do this every single day.", "Stop being broke. Here is why."
-- Lines 2-4: Build the problem or contrast (poor mindset vs rich mindset, or shocking truth)
-- Line 5 (re-hook ~15s mark): Pivot line that makes viewer stay — "But here is what they never show you." or similar
-- Lines 6-8: The revelation, the mindset shift, the insight
-- Last line: Urgency CTA — "Save this. Your future self will thank you." or "Most people will scroll past this." or similar
+═══ HOOK RULES (first 3 seconds — this determines everything) ═══
 
-Rules:
-- Maximum 8 words per sentence
-- Use "you" directly — talk TO the viewer
-- One concrete statistic or fact about wealth/success
-- Dark, cinematic, aspirational tone — not cheesy
-- Total: 60-70 words
+Choose EXACTLY ONE format per video:
+FORMAT A — Shocking statistic: "95% of startups fail because of THIS one mistake"
+FORMAT B — Counter-intuitive: "Working harder is silently destroying your business"
+FORMAT C — Direct challenge: "You're not broke. You're just thinking like an employee"
+FORMAT D — Curiosity gap: "The one thing Jeff Bezos does that nobody talks about"
 
-Return ONLY raw JSON, no markdown backticks, no explanation:
+ABSOLUTELY BANNED hooks:
+- "Did you know..."
+- "The secret to success is..."
+- "In today's video..."
+- "Hey guys, welcome back"
+- Any question starting with "What if"
+- Generic motivational openers
+
+═══ SCRIPT STRUCTURE (55-65 words total — strict) ═══
+
+[HOOK] — 1 sentence, max 8 words, scroll-stopping
+[PROBLEM] — 1-2 sentences, specific pain point, relatable
+[INSIGHT] — 2-3 sentences, unique angle, use real examples/numbers when possible
+[CTA] — 1 sentence, single clear action (follow, comment, save)
+
+TONE: Direct, confident, conversational — like a successful friend giving advice
+NOT corporate. NOT preachy. NOT generic.
+
+═══ VISUAL SEARCH TERMS (critical for video quality) ═══
+
+Generate 6 scene-specific visual search terms.
+Each term must be 3-5 words, concrete, and return quality results on Pexels.
+
+WRONG approach: "failure", "success", "hustle", "business"
+RIGHT approach: "entrepreneur staring empty office", "businessman celebrating phone screen"
+
+Map each term to the corresponding script moment:
+- Term 1 → Hook visual (dramatic, attention-grabbing)
+- Term 2 → Problem visual (relatable struggle)
+- Term 3 → Insight visual 1 (solution context)
+- Term 4 → Insight visual 2 (supporting evidence)
+- Term 5 → Insight visual 3 (aspirational)
+- Term 6 → CTA visual (action-oriented, energetic)
+
+═══ OUTPUT FORMAT (JSON only, no markdown, no explanation) ═══
+
 {
-  "script": "complete script text",
+  "script": "complete script text here",
   "hook": "first sentence only",
-  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5", "keyword 6"],
-  "title": "video title under 60 chars",
-  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
-}
+  "visualSearchTerms": ["term1", "term2", "term3", "term4", "term5", "term6"],
+  "title": "YouTube/TikTok title, 60 chars max, curiosity-driven, no clickbait",
+  "hashtags": ["entrepreneur", "mindset", "startup", "motivation", "business"],
+  "hookFormat": "A|B|C|D"
+}`
 
-Keywords must be English, cinematic, luxury or dark-aspirational. 2-4 words each. Use 6 DIFFERENT visual scenes that match the script narrative — vary between: failure scenes, hustle/work scenes, luxury/success scenes, city/night scenes, close-up detail shots, and nature/dramatic scenes.
-Example good keywords: "luxury penthouse night", "businessman walking city", "sports car rain", "skyscraper rooftop view", "cash money close up", "private jet interior", "man suit thinking", "city lights aerial", "person alone dark room", "sunset mountain peak"
-Hashtags should include: #motivation #wealth #mindset #success #fyp`
+  const exclusionNote = excludedHooks && excludedHooks.length > 0
+    ? `\n\nAVOID these recently used hook openings (do not repeat or paraphrase):\n${excludedHooks.slice(-10).map(h => `- "${h}"`).join('\n')}`
+    : ''
+
+  const feedbackNote = improvementFeedback
+    ? `\n\nPREVIOUS ATTEMPT FAILED QUALITY CHECK. Apply this feedback:\n${improvementFeedback}`
+    : ''
+
+  const userPrompt = `Create a viral entrepreneurship short-form video script about: ${topic}${exclusionNote}${feedbackNote}
+
+Return ONLY raw JSON, no markdown backticks, no explanation.`
 
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -59,7 +102,6 @@ Hashtags should include: #motivation #wealth #mindset #success #fyp`
       const content = response.choices[0]?.message?.content
       if (!content) throw new Error('Empty response from OpenAI')
 
-      // Strip markdown backticks if GPT wraps response in code block
       const raw = content
         .replace(/^```(?:json)?\s*/i, '')
         .replace(/\s*```$/, '')

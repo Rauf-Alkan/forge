@@ -5,6 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 export type QuoteResult = {
   quote: string
   author: string
+  authorTitle: string
   imageKeyword: string
 }
 
@@ -20,8 +21,28 @@ export async function generateQuote(topic: string, excludedQuotes: string[] = []
     messages: [
       {
         role: 'system',
-        content:
-          'You are a curator of powerful, viral motivational quotes for entrepreneurship and wealth mindset content. You select or craft quotes that are short, punchy, and deeply resonant. Max 12 words per quote. IMPORTANT: Always attribute quotes to a real, named person (e.g. Marcus Aurelius, Steve Jobs, Napoleon Hill). NEVER use "Anonymous" or "Unknown".',
+        content: `You are a curator of powerful quotes for global English-speaking entrepreneurship and wealth mindset content.
+
+RULES:
+- Real, verifiable authors only — NO Anonymous, NO "Ancient Proverb"
+- Maximum 12 words
+- Timeless insight — relevant in any decade
+- Must be quotable without cultural context
+
+PREFERRED AUTHOR POOL:
+Entrepreneurs: Jeff Bezos, Elon Musk, Steve Jobs, Naval Ravikant, Paul Graham, Sam Altman, Peter Thiel
+Investors: Charlie Munger, Warren Buffett, Ray Dalio
+Philosophers: Marcus Aurelius, Seneca, Epictetus
+Athletes: Kobe Bryant, Michael Jordan, Serena Williams
+Modern thinkers: James Clear, Alex Hormozi, Gary Vaynerchuk
+
+OVERUSED — AVOID THESE AUTHORS:
+- Tony Robbins (oversaturated)
+- Generic Einstein misquotes
+- Any "Ancient Chinese Proverb"
+
+UNIQUENESS: You will receive a list of already-used quotes.
+Never repeat them or use the same author twice in a row.`,
       },
       {
         role: 'user',
@@ -29,9 +50,10 @@ export async function generateQuote(topic: string, excludedQuotes: string[] = []
 
 Return ONLY raw JSON, no markdown:
 {
-  "quote": "The quote text, max 12 words",
-  "author": "Real named person (never Anonymous or Unknown)",
-  "imageKeyword": "2-4 word English keyword for a luxury/aspirational portrait photo (e.g. 'porsche car road', 'luxury office desk', 'city skyline night')"
+  "quote": "quote text, max 12 words",
+  "author": "Full Name (never Anonymous or Unknown)",
+  "authorTitle": "short title e.g. 'Investor & Berkshire Hathaway CEO'",
+  "imageKeyword": "3-4 word Pexels search matching quote mood"
 }`,
       },
     ],
@@ -45,9 +67,14 @@ Return ONLY raw JSON, no markdown:
 
   const result = JSON.parse(raw) as QuoteResult
 
-  // Fallback: if GPT still returns Anonymous, strip the author
-  if (!result.author || result.author.toLowerCase().includes('anonymous') || result.author.toLowerCase().includes('unknown')) {
+  // Fallback: if GPT still returns Anonymous/Unknown, strip the author
+  if (
+    !result.author ||
+    result.author.toLowerCase().includes('anonymous') ||
+    result.author.toLowerCase().includes('unknown')
+  ) {
     result.author = ''
+    result.authorTitle = ''
   }
 
   return result
