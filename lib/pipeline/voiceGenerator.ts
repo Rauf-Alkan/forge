@@ -19,9 +19,9 @@ export async function generateVoice(script: string, jobId: string): Promise<stri
         text: script,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.35,
-          similarity_boost: 0.75,
-          style: 0.45,
+          stability: 0.28,
+          similarity_boost: 0.85,
+          style: 0.65,
           use_speaker_boost: true,
         },
       }),

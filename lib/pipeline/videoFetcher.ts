@@ -86,7 +86,7 @@ export async function fetchVideos(
   keywords: string[],
   jobId: string
 ): Promise<string[]> {
-  const FALLBACK = 'dark cinematic background'
+  const FALLBACK = 'luxury city night'
 
   const downloadTasks = keywords.map(async (keyword, index) => {
     let video = await searchPexels(keyword)
