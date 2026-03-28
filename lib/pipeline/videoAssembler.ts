@@ -52,7 +52,7 @@ export async function assembleVideo(
     'Alignment=2',
     'MarginL=40',
     'MarginR=40',
-    'MarginV=120',
+    'MarginV=40',
   ].join('\\,')
 
   const n = videoPaths.length
