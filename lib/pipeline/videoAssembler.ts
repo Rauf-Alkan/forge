@@ -37,7 +37,7 @@ export async function assembleVideo(
 
   // Subtitle style — TikTok: big, centered, white with thick black outline
   const subtitleStyle = [
-    'FontName=Arial',
+    'FontName=DejaVu Sans',
     'FontSize=72',
     'Bold=1',
     'PrimaryColour=&H00FFFFFF',
@@ -46,7 +46,7 @@ export async function assembleVideo(
     'Shadow=0',
     'Alignment=5',
     'MarginV=50',
-  ].join(',')
+  ].join('\\,')
 
   const videoFilter =
     `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,` +

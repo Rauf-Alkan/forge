@@ -1,7 +1,8 @@
 FROM node:20-alpine
 
 # Runtime + build tools (build tools removed after install)
-RUN apk add --no-cache ffmpeg ffmpeg-libs libass openssl python3 make g++
+RUN apk add --no-cache ffmpeg ffmpeg-libs libass openssl ttf-dejavu fontconfig python3 make g++ && \
+    fc-cache -f
 
 WORKDIR /app
 
