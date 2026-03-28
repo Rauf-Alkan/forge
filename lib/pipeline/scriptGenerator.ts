@@ -2,6 +2,8 @@ import OpenAI from 'openai'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+export type Platform = 'tiktok' | 'youtube'
+
 export type ScriptResult = {
   script: string
   hook: string
@@ -11,16 +13,31 @@ export type ScriptResult = {
   hookFormat: string
 }
 
+const TIKTOK_RULES = `
+═══ TIKTOK-SPECIFIC RULES (critical for algorithm performance) ═══
+
+PLATFORM: TikTok
+- First word must be powerful — a single punch word (e.g. "Most", "Stop", "Rich", "Nobody")
+- Design for LOOP: last sentence must connect back to the hook naturally so the viewer watches again
+- Provoke EXACTLY ONE emotion: curiosity OR controversy OR aspiration — never mix
+- Write for SILENT viewing AND sound-on viewing simultaneously (every word works without audio context)
+- Completion rate goal: structure the script so the viewer watches 2+ times
+- Pacing: short punchy sentences only — no sentence over 8 words
+- No em-dashes or semicolons — they read poorly on mobile`
+
 export async function generateScript(
   topic: string,
+  platform: Platform = 'tiktok',
   improvementFeedback?: string,
   excludedHooks?: string[]
 ): Promise<ScriptResult> {
+  const platformRules = platform === 'tiktok' ? TIKTOK_RULES : ''
+
   const systemPrompt = `You are an elite short-form video content strategist with 10+ years experience creating viral entrepreneurship content for global audiences.
 
 TARGET AUDIENCE: English-speaking, 22-40 years old, aspiring entrepreneurs
 Markets: United States, United Kingdom, Canada, Australia
-
+${platformRules}
 ═══ HOOK RULES (first 3 seconds — this determines everything) ═══
 
 Choose EXACTLY ONE format per video:
@@ -69,7 +86,7 @@ Map each term to the corresponding script moment:
   "script": "complete script text here",
   "hook": "first sentence only",
   "visualSearchTerms": ["term1", "term2", "term3", "term4", "term5", "term6"],
-  "title": "YouTube/TikTok title, 60 chars max, curiosity-driven, no clickbait",
+  "title": "TikTok title, 60 chars max, curiosity-driven, no clickbait",
   "hashtags": ["entrepreneur", "mindset", "startup", "motivation", "business"],
   "hookFormat": "A|B|C|D"
 }`

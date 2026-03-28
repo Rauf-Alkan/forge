@@ -58,7 +58,7 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   // ADIM 1 — Script
   console.log(`[${jobId}] Step 1: Generating script...`)
   await updateJob(jobId, { status: 'processing', currentStep: 1, stepName: 'Writing script...', progress: 5 })
-  let scriptResult = await generateScript(topic, undefined, usedHooks)
+  let scriptResult = await generateScript(topic, 'tiktok', undefined, usedHooks)
   console.log(`[${jobId}] Step 1 done — hook: "${scriptResult.hook}" (format ${scriptResult.hookFormat})`)
 
   // QUALITY GATE
@@ -81,7 +81,7 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
       stepName: `Quality check: ${qualityScore.total}/100. Improving... (${attempts}/${MAX_ATTEMPTS})`,
       progress: 12,
     })
-    scriptResult = await generateScript(topic, qualityScore.improvementFeedback, usedHooks)
+    scriptResult = await generateScript(topic, 'tiktok', qualityScore.improvementFeedback, usedHooks)
     qualityScore = await scoreScript({
       script: scriptResult.script,
       hook: scriptResult.hook,
