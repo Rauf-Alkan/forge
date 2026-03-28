@@ -9,15 +9,27 @@ type Props = {
 }
 
 export default function VideoPreview({ jobStatus, onReset }: Props) {
-  const { downloadUrl, title, hashtags } = jobStatus
+  const { downloadUrl, title, hashtags, description } = jobStatus
   const [copiedTag, setCopiedTag] = useState<string | null>(null)
   const [copiedAll, setCopiedAll] = useState(false)
+  const [copiedDesc, setCopiedDesc] = useState(false)
 
   async function copyTag(tag: string) {
     try {
       await navigator.clipboard.writeText(tag)
       setCopiedTag(tag)
       setTimeout(() => setCopiedTag(null), 1500)
+    } catch {
+      // clipboard not available
+    }
+  }
+
+  async function copyDescription() {
+    if (!description) return
+    try {
+      await navigator.clipboard.writeText(description)
+      setCopiedDesc(true)
+      setTimeout(() => setCopiedDesc(false), 1500)
     } catch {
       // clipboard not available
     }
@@ -65,6 +77,31 @@ export default function VideoPreview({ jobStatus, onReset }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Description */}
+      {description && (
+        <div className="bg-[#0a0d14] border border-white/[0.06] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-gray-600 uppercase tracking-wider">TikTok Description</span>
+            <button
+              onClick={copyDescription}
+              className="text-[11px] text-gray-600 hover:text-gray-300 transition-colors flex items-center gap-1"
+            >
+              {copiedDesc ? (
+                <span className="text-emerald-500">Copied!</span>
+              ) : (
+                <>
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path d="M4 2a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H4zm4 1.5A1.5 1.5 0 106 5v6a1.5 1.5 0 003 0V5A1.5 1.5 0 008 3.5z" />
+                  </svg>
+                  Copy
+                </>
+              )}
+            </button>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{description}</p>
+        </div>
+      )}
 
       {/* Hashtags */}
       {hashtags && hashtags.length > 0 && (

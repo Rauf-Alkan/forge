@@ -10,6 +10,7 @@ export type JobStatus = {
   downloadUrl?: string
   title?: string
   hashtags?: string[]
+  description?: string
   createdAt: Date
 }
 
@@ -41,6 +42,7 @@ export async function getJob(jobId: string): Promise<JobStatus | null> {
     downloadUrl: job.downloadUrl ?? undefined,
     title: job.title ?? undefined,
     hashtags: job.hashtags,
+    description: job.description ?? undefined,
     createdAt: job.createdAt,
   }
 }

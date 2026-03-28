@@ -8,6 +8,7 @@ import { assembleQuoteVideo } from '@/lib/pipeline/quote/quoteVideoAssembler'
 import { downloadMusic } from '@/lib/pipeline/musicProvider'
 import { uploadToR2 } from '@/lib/pipeline/r2Uploader'
 import { getUsedValues, saveUsedValue } from '@/lib/contentHistory'
+import { generateDescription } from '@/lib/pipeline/descriptionGenerator'
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,12 +89,14 @@ async function runQuotePipeline(jobId: string, topic: string): Promise<void> {
   const downloadUrl = await uploadToR2(jobId, videoPath)
   console.log(`[${jobId}] Step 5 done — url: ${downloadUrl}`)
 
-  // Save to history
-  await Promise.all([
+  // Save to history + generate description in parallel
+  console.log(`[${jobId}] Saving history and generating description...`)
+  const [description] = await Promise.all([
+    generateDescription({ type: 'quote', quote: quoteResult.quote, author: quoteResult.author }),
     saveUsedValue('quote', quoteResult.quote),
     saveUsedValue('image_url', imageUrl),
   ])
-  console.log(`[${jobId}] History saved`)
+  console.log(`[${jobId}] Description done`)
 
   await updateJob(jobId, {
     status: 'completed',
@@ -101,6 +104,7 @@ async function runQuotePipeline(jobId: string, topic: string): Promise<void> {
     downloadUrl,
     title: `"${quoteResult.quote}"${quoteResult.author ? ` — ${quoteResult.author}` : ''}`,
     hashtags: ['#motivation', '#quotes', '#mindset', '#success', '#fyp'],
+    description,
   })
   console.log(`[${jobId}] Quote pipeline completed successfully`)
 }

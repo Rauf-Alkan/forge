@@ -9,6 +9,7 @@ import { generateSubtitles } from '@/lib/pipeline/subtitleGenerator'
 import { assembleVideo } from '@/lib/pipeline/videoAssembler'
 import { downloadMusic } from '@/lib/pipeline/musicProvider'
 import { uploadToR2 } from '@/lib/pipeline/r2Uploader'
+import { generateDescription } from '@/lib/pipeline/descriptionGenerator'
 
 export async function POST(req: NextRequest) {
   try {
@@ -92,6 +93,15 @@ async function runPipeline(jobId: string, topic: string): Promise<void> {
   const downloadUrl = await uploadToR2(jobId)
   console.log(`[${jobId}] Step 6 done — url: ${downloadUrl}`)
 
-  await updateJob(jobId, { status: 'completed', progress: 100, downloadUrl, title: scriptResult.title, hashtags: scriptResult.hashtags })
+  console.log(`[${jobId}] Generating TikTok description...`)
+  const description = await generateDescription({
+    type: 'video',
+    title: scriptResult.title,
+    hook: scriptResult.hook,
+    hashtags: scriptResult.hashtags,
+  })
+  console.log(`[${jobId}] Description done`)
+
+  await updateJob(jobId, { status: 'completed', progress: 100, downloadUrl, title: scriptResult.title, hashtags: scriptResult.hashtags, description })
   console.log(`[${jobId}] Pipeline completed successfully`)
 }

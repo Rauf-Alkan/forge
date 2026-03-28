@@ -18,6 +18,7 @@ model Job {
   downloadUrl String?
   title       String?
   hashtags    String[]
+  description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
